@@ -1,0 +1,108 @@
+import bpy 
+ 
+# Set the scene units to metric 
+bpy.context.scene.unit_settings.system = 'METRIC' 
+ 
+# Create a new mesh object for the domain 
+domain_mesh = bpy.data.meshes.new(name="DomainMesh") 
+domain_obj = bpy.data.objects.new(name="Domain", object_data=domain_mesh) 
+bpy.context.scene.collection.objects.link(domain_obj) 
+ 
+# Create a new mesh object for the fluid 
+fluid_mesh = bpy.data.meshes.new(name="FluidMesh") 
+fluid_obj = bpy.data.objects.new(name="Fluid", object_data=fluid_mesh) 
+bpy.context.scene.collection.objects.link(fluid_obj) 
+ 
+# Create a new mesh object for the emitter 
+emitter_mesh = bpy.data.meshes.new(name="EmitterMesh") 
+emitter_obj = bpy.data.objects.new(name="Emitter", object_data=emitter_mesh) 
+bpy.context.scene.collection.objects.link(emitter_obj) 
+ 
+# Set the domain dimensions and resolution 
+domain_obj.dimensions = (2, 2, 2) 
+bpy.data.scenes[0].render.fps = 25 
+bpy.data.scenes[0].render.fps_base = 1 
+bpy.data.scenes[0].render.image_settings.file_format = 'AVI_JPEG' 
+bpy.data.scenes[0].render.image_settings.color_mode = 'RGB' 
+bpy.data.scenes[0].frame_end = 100 
+bpy.data.scenes[0].frame_start = 1 
+bpy.data.scenes[0].frame_step = 1 
+bpy.context.scene.frame_end = 100 
+ 
+# Create a new cube object and set it as the fluid domain 
+bpy.ops.mesh.primitive_cube_add(size=2.0, enter_editmode=False, align='WORLD', location=(0, 0, 0)) 
+cube = bpy.context.active_object 
+http://cube.name = "Fluid Domain" 
+bpy.ops.object.modifier_add(type='FLUID') 
+bpy.context.object.modifiers["Fluid"].fluid_type = 'DOMAIN' 
+ 
+# Set up the fluid simulation settings 
+scene = bpy.context.scene 
+fluid_modifier = cube.modifiers["Fluid"] 
+fluid_settings = fluid_modifier.domain_settings 
+fluid_settings.resolution_max = 128 
+fluid_settings.use_spray_particles = True 
+fluid_settings.use_foam_particles = True 
+ 
+# Add an inflow object to the scene 
+bpy.ops.mesh.primitive_plane_add(size=2.0, enter_editmode=False, align='WORLD', location=(0, 0, 0)) 
+inflow = bpy.context.active_object 
+http://inflow.name = "Inflow" 
+bpy.ops.object.modifier_add(type='FLUID') 
+bpy.context.object.modifiers["Fluid"].fluid_type = 'INFLOW' 
+ 
+# Set up the inflow object settings 
+inflow_modifier = inflow.modifiers["Fluid"] 
+inflow_modifier.flow_settings.flow_type = 'LIQUID' 
+inflow_modifier.flow_settings.flow_behavior = 'IN_FLOW' 
+inflow_modifier.flow_settings.flow_velocity = 5.0 
+ 
+# Bake the fluid simulation 
+bpy.ops.fluid.bake() 
+ 
+# Set up fluid domain settings 
+bpy.context.scene.fluid_settings.type = 'DOMAIN' 
+bpy.context.scene.fluid_settings.domain_settings.use_mesh = True 
+bpy.context.scene.fluid_settings.domain_settings.use_velocity_length = True 
+bpy.context.scene.fluid_settings.domain_settings.use_velocity_color = True 
+bpy.context.scene.fluid_settings.domain_settings.color_velocity = (0.0, 1.0, 0.0, 1.0) 
+bpy.context.scene.fluid_settings.domain_settings.velocity_max = 10.0 
+bpy.context.scene.fluid_settings.domain_settings.velocity_min = 0.0 
+bpy.context.scene.fluid_settings.domain_settings.color_type = 'VELOCITY' 
+bpy.context.scene.fluid_settings.domain_settings.color_maximum = 10.0 
+bpy.context.scene.fluid_settings.domain_settings.color_minimum = 0.0 
+bpy.context.scene.fluid_settings.domain_settings.color_dissipation = 0.1 
+bpy.context.scene.fluid_settings.domain_settings.color_diffusion = 0.1 
+bpy.context.scene.fluid_settings.domain_settings.use_color_ramp = True 
+bpy.context.scene.fluid_settings.domain_settings.color_ramp.elements.new(0.5) 
+ 
+# Create a fluid domain object 
+domain_obj = bpy.data.objects.new(name="FluidDomain", object_data=None) 
+bpy.context.scene.collection.objects.link(domain_obj) 
+ 
+# Add a fluid simulation modifier to the domain object 
+fluid_modifier = domain_obj.modifiers.new(name="FluidSettings", type='FLUID_SIMULATION') 
+ 
+# Set the fluid properties 
+fluid_modifier.settings.time_scale = 1.0 
+fluid_modifier.settings.use_gravity = True 
+fluid_modifier.settings.use_initial_time = True 
+fluid_modifier.settings.use_scene_framerate = True 
+fluid_modifier.settings.fluid_type = 'LIQUID' 
+fluid_modifier.settings.use_viscosity = True 
+fluid_modifier.settings.viscosity_factor = 0.1 
+fluid_modifier.settings.viscosity_type = 'BKEY' 
+fluid_modifier.settings.color_diffusion = 0.1 
+fluid_modifier.settings.color_factor = 0.1 
+fluid_modifier.settings.resolution_max = 128 
+fluid_modifier.settings.resolution_min = 64 
+fluid_modifier.settings.subframes = 4 
+fluid_modifier.settings.use_effector_particles = True 
+ 
+ 
+# Set the emitter properties 
+emitter_settings = emitter_obj.modifiers.new(name="EmitterSettings", type='FLUID') 
+emitter_settings.fluid_settings = fluid_settings 
+emitter_settings.fluid_type = 'LIQUID' 
+emitter_settings.use_inflow = True 
+emitter_settings.inflow 
